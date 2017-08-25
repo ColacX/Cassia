@@ -16,27 +16,38 @@ angular.module("cassia").directive("cassiaTest", ["chromeTabs", "googleVisionApi
 					var prefix = "data:image/jpeg;base64,";
 					var imageBase64 = dataUrl.substring(prefix.length, dataUrl.length);
 
-					var response = await googleVisionApi.analyse(imageBase64);
-					console.log(response);
+					// var response = await googleVisionApi.analyse(imageBase64);
+					// console.log(response);
+					// response.data.responses[0].textAnnotations.forEach((item) => {
+					// 	console.log(item);
+					// 	//.boundingPoly.vertices[0].x
+					// });
 
 					var script = `
+var list = document.getElementsByClassName("overlay");
+for(var i=0; i<list.length; i++){
+	document.body.removeChild(list[i]);
+}
+
 var overlay = document.createElement("div");
-element.classList.add("overlay");
+overlay.classList.add("overlay");
 document.body.appendChild(overlay);
 `;
 					await chromeTabs.executeScript(script);
 
 					var style = `
-body{
+.overlay{
+	width:100vw;
+	height:100vh;
 	background-color:red;
+	position:absolute;
+	left:0;
+	top:0;
 }
 `;
 					await chromeTabs.executeStyle(style);
 
-					response.data.responses[0].textAnnotations.forEach((item) => {
-						console.log(item);
-						//.boundingPoly.vertices[0].x
-					});
+
 				}
 				catch (error) {
 					console.error(error);
@@ -63,7 +74,7 @@ angular.module("cassia").service("chromeTabs", [function () {
 		});
 	};
 
-	self.executeStyle = (code) => {
+	self.insertStyle = (code) => {
 		return new Promise((resolve, reject) => {
 			chrome.tabs.insertCSS({ code: code }, resolve);
 		});
