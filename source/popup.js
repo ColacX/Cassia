@@ -23,6 +23,8 @@ angular.module("cassia").directive("cassiaTest", ["chromeTabs", "googleVisionApi
 					// 	//.boundingPoly.vertices[0].x
 					// });
 
+					await chromeTabs.insertStyle(null, "cassiaOverlay.css");
+
 					var script = `
 var list = document.getElementsByClassName("cassiaOverlay");
 for(var i=0; i<list.length; i++){
@@ -34,10 +36,6 @@ cassiaOverlay.classList.add("cassiaOverlay");
 document.body.appendChild(cassiaOverlay);
 `;
 					await chromeTabs.executeScript(script);
-
-					await chromeTabs.insertStyle(null, "cassiaOverlay.css");
-
-
 				}
 				catch (error) {
 					console.error(error);
