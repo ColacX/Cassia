@@ -35,17 +35,7 @@ document.body.appendChild(cassiaOverlay);
 `;
 					await chromeTabs.executeScript(script);
 
-					var style = `
-.cassiaOverlay{
-	width:100vw !important;
-	height:100vh !important;
-	background-color:red !important;
-	position:absolute !important;
-	left:0 !important;
-	top:0 !important;
-}
-`;
-					await chromeTabs.insertStyle(style);
+					await chromeTabs.insertStyle(null, "cassiaOverlay.css");
 
 
 				}
@@ -74,9 +64,9 @@ angular.module("cassia").service("chromeTabs", [function () {
 		});
 	};
 
-	self.insertStyle = (code) => {
+	self.insertStyle = (code, file) => {
 		return new Promise((resolve, reject) => {
-			chrome.tabs.insertCSS({ code: code }, resolve);
+			chrome.tabs.insertCSS({ code: code, file: file }, resolve);
 		});
 	};
 
