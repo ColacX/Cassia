@@ -16,10 +16,27 @@ angular.module("cassia").directive("cassiaTest", ["chromeTabs", "googleVisionApi
 					var prefix = "data:image/jpeg;base64,";
 					var imageBase64 = dataUrl.substring(prefix.length, dataUrl.length);
 
-					//await chromeTabs.executeScript(`alert("hello world");`);
-
 					var response = await googleVisionApi.analyse(imageBase64);
 					console.log(response);
+
+					var script = `
+var overlay = document.createElement("div");
+element.classList.add("overlay");
+document.body.appendChild(overlay);
+`;
+					await chromeTabs.executeScript(script);
+
+					var style = `
+body{
+	background-color:red;
+}
+`;
+					await chromeTabs.executeStyle(style);
+
+					response.data.responses[0].textAnnotations.forEach((item) => {
+						console.log(item);
+						//.boundingPoly.vertices[0].x
+					});
 				}
 				catch (error) {
 					console.error(error);
@@ -46,9 +63,16 @@ angular.module("cassia").service("chromeTabs", [function () {
 		});
 	};
 
+	self.executeStyle = (code) => {
+		return new Promise((resolve, reject) => {
+			chrome.tabs.insertCSS({ code: code }, resolve);
+		});
+	};
+
 	return self;
 }]);
 
+//https://cloud.google.com/vision/docs/request
 angular.module("cassia").service("googleVisionApi", ["$http", function ($http) {
 	var self = this;
 	var apiKey = "AIzaSyBC6V0krYfH5qBama4J3gwZABf2xWktQXE";
@@ -63,9 +87,21 @@ angular.module("cassia").service("googleVisionApi", ["$http", function ($http) {
 							"content": imageBase64
 						},
 						"features": [
+							// {
+							// 	"type": "CROP_HINTS"
+							// },
+							// {
+							// 	"type": "LABEL_DETECTION"
+							// },
 							{
-								"type": "LABEL_DETECTION"
-							}
+								"type": "TEXT_DETECTION"
+							},
+							// {
+							// 	"type": "FACE_DETECTION"
+							// },
+							// {
+							// 	"type": "WEB_DETECTION"
+							// },
 						]
 					}
 				]
