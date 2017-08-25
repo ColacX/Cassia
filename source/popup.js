@@ -3,7 +3,7 @@
  */
 angular.module("cassia", []);
 
-angular.module("cassia").directive("cassiaTest", ["cassiaTabs", function (cassiaTabs) {
+angular.module("cassia").directive("cassiaTest", ["chromeTabs", "googleVisionApi", function (chromeTabs, googleVisionApi) {
 	return {
 		restrict: "E",
 		replace: true,
@@ -11,10 +11,15 @@ angular.module("cassia").directive("cassiaTest", ["cassiaTabs", function (cassia
 		link: function ($scope, $element, $attributes, $controller) {
 			(async () => {
 				try {
-					var dataUrl = await cassiaTabs.captureTab();
-					$element.append(`<img src="${dataUrl}" />`);
+					var dataUrl = await chromeTabs.captureTab();
+					//$element.append(`<img src="${dataUrl}" />`);
+					var prefix = "data:image/jpeg;base64,";
+					var imageBase64 = dataUrl.substring(prefix.length, dataUrl.length);
 
-					await cassiaTabs.executeScript(`alert("hello world");`);
+					//await chromeTabs.executeScript(`alert("hello world");`);
+
+					var response = await googleVisionApi.analyse(imageBase64);
+					console.log(response);
 				}
 				catch (error) {
 					console.error(error);
@@ -25,7 +30,7 @@ angular.module("cassia").directive("cassiaTest", ["cassiaTabs", function (cassia
 }]);
 
 //https://developer.chrome.com/extensions/tabs#method-captureVisibleTab
-angular.module("cassia").service("cassiaTabs", [function () {
+angular.module("cassia").service("chromeTabs", [function () {
 	if (!chrome.tabs) throw "chrome.tabs not supported";
 	var self = this;
 
@@ -38,6 +43,41 @@ angular.module("cassia").service("cassiaTabs", [function () {
 	self.executeScript = (code) => {
 		return new Promise((resolve, reject) => {
 			chrome.tabs.executeScript({ code: code }, resolve);
+		});
+	};
+
+	return self;
+}]);
+
+angular.module("cassia").service("googleVisionApi", ["$http", function ($http) {
+	var self = this;
+	var apiKey = "AIzaSyBC6V0krYfH5qBama4J3gwZABf2xWktQXE";
+	var apiUrl = "https://vision.googleapis.com/v1/images:annotate?key=" + apiKey;
+
+	self.analyse = (imageBase64) => {
+		return new Promise((resolve, reject) => {
+			var data = {
+				"requests": [
+					{
+						"image": {
+							"content": imageBase64
+						},
+						"features": [
+							{
+								"type": "LABEL_DETECTION"
+							}
+						]
+					}
+				]
+			};
+
+			$http({
+				method: "POST",
+				url: apiUrl,
+				data: JSON.stringify(data),
+				dataType: "json",
+				contentType: "application/json"
+			}).then(resolve).catch(reject);
 		});
 	};
 
