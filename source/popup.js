@@ -24,28 +24,28 @@ angular.module("cassia").directive("cassiaTest", ["chromeTabs", "googleVisionApi
 					// });
 
 					var script = `
-var list = document.getElementsByClassName("overlay");
+var list = document.getElementsByClassName("cassiaOverlay");
 for(var i=0; i<list.length; i++){
 	document.body.removeChild(list[i]);
 }
 
-var overlay = document.createElement("div");
-overlay.classList.add("overlay");
-document.body.appendChild(overlay);
+var cassiaOverlay = document.createElement("div");
+cassiaOverlay.classList.add("cassiaOverlay");
+document.body.appendChild(cassiaOverlay);
 `;
 					await chromeTabs.executeScript(script);
 
 					var style = `
-.overlay{
-	width:100vw;
-	height:100vh;
-	background-color:red;
-	position:absolute;
-	left:0;
-	top:0;
+.cassiaOverlay{
+	width:100vw !important;
+	height:100vh !important;
+	background-color:red !important;
+	position:absolute !important;
+	left:0 !important;
+	top:0 !important;
 }
 `;
-					await chromeTabs.executeStyle(style);
+					await chromeTabs.insertStyle(style);
 
 
 				}
