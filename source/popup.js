@@ -9,11 +9,16 @@ angular.module("cassia").directive("cassiaTest", ["cassiaTabs", function (cassia
 		replace: true,
 		template: `<span>test</span>`,
 		link: function ($scope, $element, $attributes, $controller) {
-
 			(async () => {
-				var dataUrl = await cassiaTabs.captureTab();
-				console.log(dataUrl);
-				$element.append(`<img src="${dataUrl}" />`);
+				try {
+					var dataUrl = await cassiaTabs.captureTab();
+					$element.append(`<img src="${dataUrl}" />`);
+
+					await cassiaTabs.executeScript(`alert("hello world");`);
+				}
+				catch (error) {
+					console.error(error);
+				}
 			})();
 		}
 	};
@@ -27,6 +32,12 @@ angular.module("cassia").service("cassiaTabs", [function () {
 	self.captureTab = () => {
 		return new Promise((resolve, reject) => {
 			chrome.tabs.captureVisibleTab(resolve);
+		});
+	};
+
+	self.executeScript = (code) => {
+		return new Promise((resolve, reject) => {
+			chrome.tabs.executeScript({ code: code }, resolve);
 		});
 	};
 
