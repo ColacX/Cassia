@@ -13,6 +13,7 @@ angular.module("cassia").directive("cassiaTest", function () {
 	};
 });
 
-document.addEventListener('DOMContentLoaded', function () {
-	console.log("started");
+angular.element(document).ready(function () {
+	var injector = angular.element(document).injector();
+	console.log("injector", injector);
 });
