@@ -4,74 +4,78 @@
 angular.module("cassia", []);
 
 angular.module("cassia").directive("cassiaTest", [
-	"chromeTabs", "googleVision", "googleTranslate", "cassiaTools",
-	function (chromeTabs, googleVision, googleTranslate, cassiaTools) {
+	"chromeTabs", "googleVision", "googleTranslate",
+	function (chromeTabs, googleVision, googleTranslate) {
 		return {
 			restrict: "E",
 			replace: true,
-			template: `<span>testing</span>`,
+			template: `
+<div>
+	<button ng-click="translateButton()">translate</button>
+</div>
+`,
 			link: function ($scope, $element, $attributes, $controller) {
-				$scope.$applyAsync(async () => {
-					try {
-						var imageUrl = await chromeTabs.captureTab();
-						//$element.append(`<img src="${imageUrl}" />`);
-						var prefix = "data:image/jpeg;base64,";
-						var imageBase64 = imageUrl.substring(prefix.length, imageUrl.length);
+				$scope.translateButton = () => {
 
-						await chromeTabs.insertStyle(null, "cassiaOverlay.css");
-						await chromeTabs.executeScript(null, "cassiaOverlay.js");
+					$scope.$applyAsync(async () => {
+						try {
+							var imageUrl = await chromeTabs.captureTab();
+							//$element.append(`<img src="${imageUrl}" />`);
+							var prefix = "data:image/jpeg;base64,";
+							var imageBase64 = imageUrl.substring(prefix.length, imageUrl.length);
 
-						var data = {};
-						data.imageUrl = imageUrl;
-						data.items = [];
-						var dictionary = {};
+							await chromeTabs.insertStyle(null, "cassiaOverlay.css");
+							await chromeTabs.executeScript(null, "cassiaOverlay.js");
 
-						var response = await googleVision.analyse(imageBase64);
-						console.log(response);
+							var data = {};
+							data.imageUrl = imageUrl;
+							data.items = [];
+							var dictionary = {};
 
-						response.data.responses[0].textAnnotations.forEach((item) => {
-							if (!item.boundingPoly || !item.boundingPoly.vertices) {
-								console.error(item);
-								return;
-							}
+							var response = await googleVision.analyse(imageBase64);
 
-							for (var i = 0; i < item.boundingPoly.vertices.length; i++) {
-								var v = item.boundingPoly.vertices[i];
-
-								if (!v.x || !v.y) {
+							response.data.responses[0].textAnnotations.forEach((item) => {
+								if (!item.boundingPoly || !item.boundingPoly.vertices) {
 									console.error(item);
 									return;
 								}
-							};
 
-							data.items.push({
-								points: item.boundingPoly.vertices,
-								title: item.description
+								for (var i = 0; i < item.boundingPoly.vertices.length; i++) {
+									var v = item.boundingPoly.vertices[i];
+
+									if (!v.x || !v.y) {
+										console.error(item);
+										return;
+									}
+								};
+
+								data.items.push({
+									points: item.boundingPoly.vertices,
+									title: item.description
+								});
+
+								dictionary[item.description] = false;
 							});
 
-							dictionary[item.description] = false;
-						});
+							var keys = Object.keys(dictionary);
+							var r = await googleTranslate.translate("ja", "en", keys);
 
-						var keys = Object.keys(dictionary);
-						var r = await googleTranslate.translate("ja", "en", keys);
+							for (var i = 0; i < keys.length; i++) {
+								dictionary[keys[i]] = r.data.data.translations[i].translatedText;
+							}
 
-						for (var i = 0; i < keys.length; i++) {
-							dictionary[keys[i]] = r.data.data.translations[i].translatedText;
+							data.items.forEach((item) => {
+								item.translation = dictionary[item.title];
+							});
+
+							var tab = await chromeTabs.getCurrent();
+							chromeTabs.sendMessage(tab.id, data);
 						}
-
-						data.items.forEach((item) => {
-							item.translation = dictionary[item.title];
-						});
-
-						console.log(keys, r, data);
-
-						var tab = await chromeTabs.getCurrent();
-						chromeTabs.sendMessage(tab.id, data);
-					}
-					catch (error) {
-						console.error(error);
-					}
-				});
+						catch (error) {
+							console.error(error);
+						}
+					});
+				}
 			}
 		};
 	}
@@ -186,31 +190,6 @@ angular.module("cassia").service("googleTranslate", ["$http", function ($http) {
 				},
 				data: data
 			}).then(resolve).catch(reject);
-		});
-	};
-
-	return self;
-}]);
-
-
-angular.module("cassia").service("cassiaTools", [function () {
-	var self = this;
-
-	self.getImageData = (dataUrl) => {
-		return new Promise(function (resolve, reject) {
-			var canvas = document.createElement('canvas');
-			var context = canvas.getContext('2d');
-			var image = new Image();
-
-			image.addEventListener('load', function () {
-				console.log(image.width, image.height);
-				canvas.width = image.width;
-				canvas.height = image.height;
-				//context.drawImage(image, 0, 0, canvas.width, canvas.height);
-				//resolve(context.getImageData(0, 0, canvas.width, canvas.height));
-			}, false);
-
-			//image.src = dataUrl;
 		});
 	};
 
