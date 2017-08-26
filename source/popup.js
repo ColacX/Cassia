@@ -18,23 +18,33 @@ angular.module("cassia").directive("cassiaTest", [
 						var prefix = "data:image/jpeg;base64,";
 						var imageBase64 = imageUrl.substring(prefix.length, imageUrl.length);
 
+						var data = {};
+						data.imageUrl = imageUrl;
+						data.items = [];
+
 						var response = await googleVisionApi.analyse(imageBase64);
 						console.log(response);
-
-						var data = {};
-						data.items = [];
 						response.data.responses[0].textAnnotations.forEach((item) => {
+							if (!item.boundingPoly) {
+								console.error(item);
+							}
+
 							data.items.push({
-								points: item.boundingPoly.vertices
+								points: item.boundingPoly.vertices,
+								title: item.description
 							});
 						});
 
-						var jsonData = JSON.stringify(data);
-						var script = `cassiaLoad("${imageUrl}", \`${jsonData}\`);`;
+						// var jsonData = JSON.stringify(data);
+						// var script = `cassiaLoad("${imageUrl}", \`${jsonData}\`);`;
+						//await chromeTabs.executeScript(script);
 						//console.log(script);
+
 						await chromeTabs.insertStyle(null, "cassiaOverlay.css");
 						await chromeTabs.executeScript(null, "cassiaOverlay.js");
-						await chromeTabs.executeScript(script);
+
+						var tab = await chromeTabs.getCurrent();
+						chromeTabs.sendMessage(tab.id, data);
 					}
 					catch (error) {
 						console.error(error);
@@ -66,6 +76,18 @@ angular.module("cassia").service("chromeTabs", [function () {
 		return new Promise((resolve, reject) => {
 			chrome.tabs.insertCSS({ code: code, file: file }, resolve);
 		});
+	};
+
+	self.getCurrent = () => {
+		return new Promise((resolve, reject) => {
+			chrome.tabs.query({ currentWindow: true, active: true }, function (tabs) {
+				resolve(tabs[0]);
+			});
+		});
+	}
+
+	self.sendMessage = (tabId, message) => {
+		chrome.tabs.sendMessage(tabId, message);
 	};
 
 	return self;
@@ -145,5 +167,4 @@ angular.module("cassia").service("cassiaTools", [function () {
 
 angular.element(document).ready(function () {
 	var injector = angular.element(document).injector();
-	console.log("injector", injector);
 });

@@ -5,6 +5,9 @@
 	left: 0 !important;
 	top: 0 !important;
 	z-index: 10000 !important;
+	fill-opacity: 0;
+	stroke: purple;
+	stroke-width: 1;
 }
 
 .cassiaOverlay img, .cassiaOverlay svg {

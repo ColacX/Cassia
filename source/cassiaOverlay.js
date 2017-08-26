@@ -1,4 +1,6 @@
-function cassiaLoad(imageUrl, jsonData) {
+chrome.runtime.onMessage.addListener((data) => {
+	console.log("data", data);
+
 	function pointsToString(points) {
 		var list = [];
 		points.forEach((item) => {
@@ -12,17 +14,14 @@ function cassiaLoad(imageUrl, jsonData) {
 		polygons.forEach((item) => {
 			list.push(`
 <g>
-	<polygon points="${pointsToString(item.points)}" style="fill-opacity: 0; stroke:purple; stroke-width:1;">
-		<title>hello world</title>
+	<polygon points="${pointsToString(item.points)}">
+		<title>${item.title}</title>
 	</polygon>
 </g>
 `);
 		});
-		return list.join();
+		return list.join("\n");
 	};
-
-	console.log(jsonData);
-	var data = JSON.parse(jsonData);
 
 	var list = document.getElementsByClassName("cassiaOverlay");
 	for (var i = 0; i < list.length; i++) {
@@ -34,10 +33,10 @@ function cassiaLoad(imageUrl, jsonData) {
 	document.body.appendChild(cassiaOverlay);
 
 	var cassiaImg = new Image();
+
 	cassiaImg.onload = () => {
 		var imageWidth = cassiaImg.clientWidth;
 		var imageHeight = cassiaImg.clientHeight;
-		console.log(imageWidth, imageHeight);
 
 		cassiaOverlay.innerHTML += `
 <svg viewBox="0 0 ${imageWidth} ${imageHeight}">
@@ -46,6 +45,7 @@ function cassiaLoad(imageUrl, jsonData) {
 `;
 
 	};
-	cassiaImg.src = imageUrl;
+
+	cassiaImg.src = data.imageUrl;
 	cassiaOverlay.appendChild(cassiaImg);
-};
+});
