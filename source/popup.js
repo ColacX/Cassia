@@ -13,47 +13,60 @@ angular.module("cassia").directive("cassiaTest", [
 			link: function ($scope, $element, $attributes, $controller) {
 				$scope.$applyAsync(async () => {
 					try {
-						// var imageUrl = await chromeTabs.captureTab();
-						// //$element.append(`<img src="${imageUrl}" />`);
-						// var prefix = "data:image/jpeg;base64,";
-						// var imageBase64 = imageUrl.substring(prefix.length, imageUrl.length);
+						var imageUrl = await chromeTabs.captureTab();
+						//$element.append(`<img src="${imageUrl}" />`);
+						var prefix = "data:image/jpeg;base64,";
+						var imageBase64 = imageUrl.substring(prefix.length, imageUrl.length);
 
-						// await chromeTabs.insertStyle(null, "cassiaOverlay.css");
-						// await chromeTabs.executeScript(null, "cassiaOverlay.js");
+						await chromeTabs.insertStyle(null, "cassiaOverlay.css");
+						await chromeTabs.executeScript(null, "cassiaOverlay.js");
 
-						// var data = {};
-						// data.imageUrl = imageUrl;
-						// data.items = [];
+						var data = {};
+						data.imageUrl = imageUrl;
+						data.items = [];
+						var dictionary = {};
 
-						// var response = await googleVision.analyse(imageBase64);
-						// console.log(response);
-
-						// response.data.responses[0].textAnnotations.forEach((item) => {
-						// 	if (!item.boundingPoly || !item.boundingPoly.vertices) {
-						// 		console.error(item);
-						// 		return;
-						// 	}
-
-						// 	for (var i = 0; i < item.boundingPoly.vertices.length; i++) {
-						// 		var v = item.boundingPoly.vertices[i];
-
-						// 		if (!v.x || !v.y) {
-						// 			console.error(item);
-						// 			return;
-						// 		}
-						// 	};
-
-						// 	data.items.push({
-						// 		points: item.boundingPoly.vertices,
-						// 		title: item.description
-						// 	});
-						// });
-
-						// var tab = await chromeTabs.getCurrent();
-						// chromeTabs.sendMessage(tab.id, data);
-
-						var response = await googleTranslate.translate("こんにちは世界", "jp", "en");
+						var response = await googleVision.analyse(imageBase64);
 						console.log(response);
+
+						response.data.responses[0].textAnnotations.forEach((item) => {
+							if (!item.boundingPoly || !item.boundingPoly.vertices) {
+								console.error(item);
+								return;
+							}
+
+							for (var i = 0; i < item.boundingPoly.vertices.length; i++) {
+								var v = item.boundingPoly.vertices[i];
+
+								if (!v.x || !v.y) {
+									console.error(item);
+									return;
+								}
+							};
+
+							data.items.push({
+								points: item.boundingPoly.vertices,
+								title: item.description
+							});
+
+							dictionary[item.description] = false;
+						});
+
+						var keys = Object.keys(dictionary);
+						var r = await googleTranslate.translate("ja", "en", keys);
+
+						for (var i = 0; i < keys.length; i++) {
+							dictionary[keys[i]] = r.data.data.translations[i].translatedText;
+						}
+
+						data.items.forEach((item) => {
+							item.translation = dictionary[item.title];
+						});
+
+						console.log(keys, r, data);
+
+						var tab = await chromeTabs.getCurrent();
+						chromeTabs.sendMessage(tab.id, data);
 					}
 					catch (error) {
 						console.error(error);
@@ -153,27 +166,25 @@ angular.module("cassia").service("googleVision", ["$http", function ($http) {
 angular.module("cassia").service("googleTranslate", ["$http", function ($http) {
 	var self = this;
 	var apiKey = "AIzaSyBC6V0krYfH5qBama4J3gwZABf2xWktQXE";
-	var apiUrl = "https://translation.googleapis.com/language/translate/v2?key=" + apiKey;
+	var apiUrl = "https://translation.googleapis.com/language/translate/v2";
 
-	self.translate = (text, source, target) => {
+	self.translate = (source, target, list) => {
 		return new Promise((resolve, reject) => {
-			var data = {
-				"q": text,
-				"source": source,
-				"target": target
-			};
+			var data = `key=${apiKey}&source=${source}&target=${target}`;
 
-			data = {
-				'q': text,
-				'target': 'en'
-			}
+			list.forEach((item) => {
+				data += `&q=${encodeURIComponent(item)}`;
+			});
 
 			$http({
 				method: "POST",
 				url: apiUrl,
-				data: JSON.stringify(data),
-				dataType: "json",
-				contentType: "application/json"
+				headers: {
+					"X-HTTP-Method-Override": "GET",
+					"AcceptCharset": "UTF-8",
+					"content-type": "application/x-www-form-urlencoded"
+				},
+				data: data
 			}).then(resolve).catch(reject);
 		});
 	};

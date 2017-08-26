@@ -15,7 +15,7 @@ chrome.runtime.onMessage.addListener((data) => {
 			list.push(`
 <g>
 	<polygon points="${pointsToString(item.points)}">
-		<title>${item.title}</title>
+		<title>${item.title} ${item.translation}</title>
 	</polygon>
 </g>
 `);
