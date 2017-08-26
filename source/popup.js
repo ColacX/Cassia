@@ -11,69 +11,87 @@ angular.module("cassia").directive("cassiaTest", [
 			replace: true,
 			template: `
 <div>
-	<button ng-click="translateButton()">translate</button>
+	<p>source</p>
+	<input type="text" ng-model="text.source"></input>
+	
+	<p>target</p>
+	<input type="text" ng-model="text.target"></input>
+
+	<p>
+		<button ng-click="overlayButton()">overlay</button>
+		<button ng-click="translateButton()">translate</button>
+	</p>
 </div>
 `,
 			link: function ($scope, $element, $attributes, $controller) {
-				$scope.translateButton = () => {
+				$scope.text = {
+					source: "",
+					target: ""
+				};
 
-					$scope.$applyAsync(async () => {
-						try {
-							var imageUrl = await chromeTabs.captureTab();
-							//$element.append(`<img src="${imageUrl}" />`);
-							var prefix = "data:image/jpeg;base64,";
-							var imageBase64 = imageUrl.substring(prefix.length, imageUrl.length);
+				$scope.overlayButton = async () => {
+					try {
+						var imageUrl = await chromeTabs.captureTab();
+						//$element.append(`<img src="${imageUrl}" />`);
+						var prefix = "data:image/jpeg;base64,";
+						var imageBase64 = imageUrl.substring(prefix.length, imageUrl.length);
 
-							await chromeTabs.insertStyle(null, "cassiaOverlay.css");
-							await chromeTabs.executeScript(null, "cassiaOverlay.js");
+						await chromeTabs.insertStyle(null, "cassiaOverlay.css");
+						await chromeTabs.executeScript(null, "cassiaOverlay.js");
 
-							var data = {};
-							data.imageUrl = imageUrl;
-							data.items = [];
-							var dictionary = {};
+						var data = {};
+						data.imageUrl = imageUrl;
+						data.items = [];
+						var dictionary = {};
 
-							var response = await googleVision.analyse(imageBase64);
+						var response = await googleVision.analyse(imageBase64);
 
-							response.data.responses[0].textAnnotations.forEach((item) => {
-								if (!item.boundingPoly || !item.boundingPoly.vertices) {
+						response.data.responses[0].textAnnotations.forEach((item) => {
+							if (!item.boundingPoly || !item.boundingPoly.vertices) {
+								console.error(item);
+								return;
+							}
+
+							for (var i = 0; i < item.boundingPoly.vertices.length; i++) {
+								var v = item.boundingPoly.vertices[i];
+
+								if (!v.x || !v.y) {
 									console.error(item);
 									return;
 								}
+							};
 
-								for (var i = 0; i < item.boundingPoly.vertices.length; i++) {
-									var v = item.boundingPoly.vertices[i];
-
-									if (!v.x || !v.y) {
-										console.error(item);
-										return;
-									}
-								};
-
-								data.items.push({
-									points: item.boundingPoly.vertices,
-									title: item.description
-								});
-
-								dictionary[item.description] = false;
+							data.items.push({
+								points: item.boundingPoly.vertices,
+								title: item.description
 							});
 
-							var keys = Object.keys(dictionary);
-							var r = await googleTranslate.translate("ja", "en", keys);
+							dictionary[item.description] = false;
+						});
 
-							for (var i = 0; i < keys.length; i++) {
-								dictionary[keys[i]] = r.data.data.translations[i].translatedText;
-							}
+						var keys = Object.keys(dictionary);
+						var r = await googleTranslate.translate("ja", "en", keys);
 
-							data.items.forEach((item) => {
-								item.translation = dictionary[item.title];
-							});
-
-							var tab = await chromeTabs.getCurrent();
-							chromeTabs.sendMessage(tab.id, data);
+						for (var i = 0; i < keys.length; i++) {
+							dictionary[keys[i]] = r.data.data.translations[i].translatedText;
 						}
-						catch (error) {
-							console.error(error);
-						}
+
+						data.items.forEach((item) => {
+							item.translation = dictionary[item.title];
+						});
+
+						var tab = await chromeTabs.getCurrent();
+						chromeTabs.sendMessage(tab.id, data);
+					}
+					catch (error) {
+						console.error(error);
+					}
+				};
+
+				$scope.translateButton = async () => {
+					var response = await googleTranslate.translate("ja", "en", [$scope.text.source]);
+					$scope.$apply(() => {
+						$scope.text.target = response.data.data.translations[0].translatedText;
 					});
 				}
 			}

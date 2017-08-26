@@ -17,6 +17,7 @@ chrome.runtime.onMessage.addListener((data) => {
 	<polygon points="${pointsToString(item.points)}">
 		<title>${item.translation}</title>
 	</polygon>
+	<text x="${item.points[0].x}" y="${item.points[0].y}">${item.translation}</text>
 </g>
 `);
 		});
