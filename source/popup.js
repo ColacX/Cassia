@@ -4,8 +4,8 @@
 angular.module("cassia", []);
 
 angular.module("cassia").directive("cassiaTest", [
-	"chromeTabs", "googleVisionApi", "cassiaTools",
-	function (chromeTabs, googleVisionApi, cassiaTools) {
+	"chromeTabs", "googleVision", "googleTranslate", "cassiaTools",
+	function (chromeTabs, googleVision, googleTranslate, cassiaTools) {
 		return {
 			restrict: "E",
 			replace: true,
@@ -13,44 +13,47 @@ angular.module("cassia").directive("cassiaTest", [
 			link: function ($scope, $element, $attributes, $controller) {
 				$scope.$applyAsync(async () => {
 					try {
-						var imageUrl = await chromeTabs.captureTab();
-						//$element.append(`<img src="${imageUrl}" />`);
-						var prefix = "data:image/jpeg;base64,";
-						var imageBase64 = imageUrl.substring(prefix.length, imageUrl.length);
+						// var imageUrl = await chromeTabs.captureTab();
+						// //$element.append(`<img src="${imageUrl}" />`);
+						// var prefix = "data:image/jpeg;base64,";
+						// var imageBase64 = imageUrl.substring(prefix.length, imageUrl.length);
 
-						await chromeTabs.insertStyle(null, "cassiaOverlay.css");
-						await chromeTabs.executeScript(null, "cassiaOverlay.js");
+						// await chromeTabs.insertStyle(null, "cassiaOverlay.css");
+						// await chromeTabs.executeScript(null, "cassiaOverlay.js");
 
-						var data = {};
-						data.imageUrl = imageUrl;
-						data.items = [];
+						// var data = {};
+						// data.imageUrl = imageUrl;
+						// data.items = [];
 
-						var response = await googleVisionApi.analyse(imageBase64);
+						// var response = await googleVision.analyse(imageBase64);
+						// console.log(response);
+
+						// response.data.responses[0].textAnnotations.forEach((item) => {
+						// 	if (!item.boundingPoly || !item.boundingPoly.vertices) {
+						// 		console.error(item);
+						// 		return;
+						// 	}
+
+						// 	for (var i = 0; i < item.boundingPoly.vertices.length; i++) {
+						// 		var v = item.boundingPoly.vertices[i];
+
+						// 		if (!v.x || !v.y) {
+						// 			console.error(item);
+						// 			return;
+						// 		}
+						// 	};
+
+						// 	data.items.push({
+						// 		points: item.boundingPoly.vertices,
+						// 		title: item.description
+						// 	});
+						// });
+
+						// var tab = await chromeTabs.getCurrent();
+						// chromeTabs.sendMessage(tab.id, data);
+
+						var response = await googleTranslate.translate("こんにちは世界", "jp", "en");
 						console.log(response);
-
-						response.data.responses[0].textAnnotations.forEach((item) => {
-							if (!item.boundingPoly || !item.boundingPoly.vertices) {
-								console.error(item);
-								return;
-							}
-
-							for (var i = 0; i < item.boundingPoly.vertices.length; i++) {
-								var v = item.boundingPoly.vertices[i];
-
-								if (!v.x || !v.y) {
-									console.error(item);
-									return;
-								}
-							};
-
-							data.items.push({
-								points: item.boundingPoly.vertices,
-								title: item.description
-							});
-						});
-
-						var tab = await chromeTabs.getCurrent();
-						chromeTabs.sendMessage(tab.id, data);
 					}
 					catch (error) {
 						console.error(error);
@@ -100,7 +103,7 @@ angular.module("cassia").service("chromeTabs", [function () {
 }]);
 
 //https://cloud.google.com/vision/docs/request
-angular.module("cassia").service("googleVisionApi", ["$http", function ($http) {
+angular.module("cassia").service("googleVision", ["$http", function ($http) {
 	var self = this;
 	var apiKey = "AIzaSyBC6V0krYfH5qBama4J3gwZABf2xWktQXE";
 	var apiUrl = "https://vision.googleapis.com/v1/images:annotate?key=" + apiKey;
@@ -146,6 +149,38 @@ angular.module("cassia").service("googleVisionApi", ["$http", function ($http) {
 
 	return self;
 }]);
+
+angular.module("cassia").service("googleTranslate", ["$http", function ($http) {
+	var self = this;
+	var apiKey = "AIzaSyBC6V0krYfH5qBama4J3gwZABf2xWktQXE";
+	var apiUrl = "https://translation.googleapis.com/language/translate/v2?key=" + apiKey;
+
+	self.translate = (text, source, target) => {
+		return new Promise((resolve, reject) => {
+			var data = {
+				"q": text,
+				"source": source,
+				"target": target
+			};
+
+			data = {
+				'q': text,
+				'target': 'en'
+			}
+
+			$http({
+				method: "POST",
+				url: apiUrl,
+				data: JSON.stringify(data),
+				dataType: "json",
+				contentType: "application/json"
+			}).then(resolve).catch(reject);
+		});
+	};
+
+	return self;
+}]);
+
 
 angular.module("cassia").service("cassiaTools", [function () {
 	var self = this;
