@@ -63,22 +63,23 @@ angular.module("cassia").directive("cassiaTest", [
 
 							data.items.push({
 								points: item.boundingPoly.vertices,
-								title: item.description
+								source: item.description
 							});
 
 							dictionary[item.description] = false;
 						});
 
-						var keys = Object.keys(dictionary);
-						var r = await googleTranslate.translate("ja", "en", keys);
+						// var keys = Object.keys(dictionary);
+						// console.log(keys);
+						// var r = await googleTranslate.translate("ja", "en", keys);
 
-						for (var i = 0; i < keys.length; i++) {
-							dictionary[keys[i]] = r.data.data.translations[i].translatedText;
-						}
+						// for (var i = 0; i < keys.length; i++) {
+						// 	dictionary[keys[i]] = r.data.data.translations[i].translatedText;
+						// }
 
-						data.items.forEach((item) => {
-							item.translation = dictionary[item.title];
-						});
+						// data.items.forEach((item) => {
+						// 	item.target = dictionary[item.source];
+						// });
 
 						var tab = await chromeTabs.getCurrent();
 						chromeTabs.sendMessage(tab.id, data);
