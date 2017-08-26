@@ -14,33 +14,9 @@ angular.module("cassia").directive("cassiaTest", [
 				$scope.$applyAsync(async () => {
 					try {
 						var imageUrl = await chromeTabs.captureTab();
-						$element.append(`<img src="${imageUrl}" />`);
+						//$element.append(`<img src="${imageUrl}" />`);
 						var prefix = "data:image/jpeg;base64,";
 						var imageBase64 = imageUrl.substring(prefix.length, imageUrl.length);
-
-						var htmlCode = `
-<img class="cassiaOverlay" src="${imageUrl}" />
-<svg class="cassiaOverlay" viewBox="0 0 1920 930">
-	<g>
-		<polygon points="933,230 983,229 983,240 933,241" style="fill:lime;stroke:purple;stroke-width:1">
-			<title>hello world</title>
-		</polygon>
-	</g>
-</svg>
-`;
-
-						var script = `
-var list = document.getElementsByClassName("cassiaOverlay");
-for(var i=0; i<list.length; i++){
-	document.body.removeChild(list[i]);
-}
-
-var cassiaOverlay = document.createElement("div");
-cassiaOverlay.classList.add("cassiaOverlay");
-document.body.appendChild(cassiaOverlay);
-
-cassiaOverlay.innerHTML = \`${htmlCode}\`;
-`;
 
 						// var response = await googleVisionApi.analyse(imageBase64);
 						// console.log(response);
@@ -70,9 +46,10 @@ cassiaOverlay.innerHTML = \`${htmlCode}\`;
 						// :
 						// 					{ x: 933, y: 241 }
 
+						var script = `cassiaLoad("${imageUrl}")`;
 						await chromeTabs.insertStyle(null, "cassiaOverlay.css");
+						await chromeTabs.executeScript(null, "cassiaOverlay.js");
 						await chromeTabs.executeScript(script);
-						console.log("script", script);
 					}
 					catch (error) {
 						console.error(error);
@@ -94,9 +71,9 @@ angular.module("cassia").service("chromeTabs", [function () {
 		});
 	};
 
-	self.executeScript = (code) => {
+	self.executeScript = (code, file) => {
 		return new Promise((resolve, reject) => {
-			chrome.tabs.executeScript({ code: code }, resolve);
+			chrome.tabs.executeScript({ code: code, file: file }, resolve);
 		});
 	};
 
