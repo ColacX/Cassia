@@ -18,30 +18,36 @@ angular.module("cassia").directive("cassiaTest", [
 						var prefix = "data:image/jpeg;base64,";
 						var imageBase64 = imageUrl.substring(prefix.length, imageUrl.length);
 
+						await chromeTabs.insertStyle(null, "cassiaOverlay.css");
+						await chromeTabs.executeScript(null, "cassiaOverlay.js");
+
 						var data = {};
 						data.imageUrl = imageUrl;
 						data.items = [];
 
 						var response = await googleVisionApi.analyse(imageBase64);
 						console.log(response);
+
 						response.data.responses[0].textAnnotations.forEach((item) => {
-							if (!item.boundingPoly) {
+							if (!item.boundingPoly || !item.boundingPoly.vertices) {
 								console.error(item);
+								return;
 							}
+
+							for (var i = 0; i < item.boundingPoly.vertices.length; i++) {
+								var v = item.boundingPoly.vertices[i];
+
+								if (!v.x || !v.y) {
+									console.error(item);
+									return;
+								}
+							};
 
 							data.items.push({
 								points: item.boundingPoly.vertices,
 								title: item.description
 							});
 						});
-
-						// var jsonData = JSON.stringify(data);
-						// var script = `cassiaLoad("${imageUrl}", \`${jsonData}\`);`;
-						//await chromeTabs.executeScript(script);
-						//console.log(script);
-
-						await chromeTabs.insertStyle(null, "cassiaOverlay.css");
-						await chromeTabs.executeScript(null, "cassiaOverlay.js");
 
 						var tab = await chromeTabs.getCurrent();
 						chromeTabs.sendMessage(tab.id, data);
