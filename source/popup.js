@@ -3,42 +3,33 @@
  */
 angular.module("cassia", []);
 
-angular.module("cassia").directive("cassiaTest", ["chromeTabs", "googleVisionApi", function (chromeTabs, googleVisionApi) {
-	return {
-		restrict: "E",
-		replace: true,
-		template: `<span>testing</span>`,
-		link: function ($scope, $element, $attributes, $controller) {
-			$scope.$applyAsync(async () => {
-				try {
-					var dataUrl = await chromeTabs.captureTab();
-					//$element.append(`<img src="${dataUrl}" />`);
-					var prefix = "data:image/jpeg;base64,";
-					var imageBase64 = dataUrl.substring(prefix.length, dataUrl.length);
+angular.module("cassia").directive("cassiaTest", [
+	"chromeTabs", "googleVisionApi", "cassiaTools",
+	function (chromeTabs, googleVisionApi, cassiaTools) {
+		return {
+			restrict: "E",
+			replace: true,
+			template: `<span>testing</span>`,
+			link: function ($scope, $element, $attributes, $controller) {
+				$scope.$applyAsync(async () => {
+					try {
+						var imageUrl = await chromeTabs.captureTab();
+						$element.append(`<img src="${imageUrl}" />`);
+						var prefix = "data:image/jpeg;base64,";
+						var imageBase64 = imageUrl.substring(prefix.length, imageUrl.length);
 
-					var svgHtml = `
-<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="9.2762mm" height="8.9409mm" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"
-viewBox="0 0 48 47"
- xmlns:xlink="http://www.w3.org/1999/xlink">
- <defs>
-  <style type="text/css">
-   <![CDATA[
-    .fil0 {fill:#B0CB1F}
-    .fil1 {fill:#009846}
-   ]]>
-  </style>
- </defs>
- <g id="Layer_x0020_1">
-  <metadata id="CorelCorpID_0Corel-Layer"/>
-  <g id="_1194153776">
-   <path class="fil1" d="M0 0l48 0 0 47 -48 0 0 -47zm39 24l-28 -18 0 34 28 -16z"/>
-  </g>
- </g>
+						var htmlCode = `
+<img class="cassiaOverlay" src="${imageUrl}" />
+<svg class="cassiaOverlay" viewBox="0 0 1920 930">
+	<g>
+		<polygon points="933,230 983,229 983,240 933,241" style="fill:lime;stroke:purple;stroke-width:1">
+			<title>hello world</title>
+		</polygon>
+	</g>
 </svg>
-
 `;
 
-					var script = `
+						var script = `
 var list = document.getElementsByClassName("cassiaOverlay");
 for(var i=0; i<list.length; i++){
 	document.body.removeChild(list[i]);
@@ -48,38 +39,49 @@ var cassiaOverlay = document.createElement("div");
 cassiaOverlay.classList.add("cassiaOverlay");
 document.body.appendChild(cassiaOverlay);
 
-cassiaOverlay.innerHTML = \`${svgHtml}\`;
-
+cassiaOverlay.innerHTML = \`${htmlCode}\`;
 `;
 
-					// var response = await googleVisionApi.analyse(imageBase64);
-					// console.log(response);
-					// response.data.responses[0].textAnnotations.forEach((item) => {
-					// 	console.log(item);
-					// 	var v0 = boundingPoly.vertices[0];
-					// 	var v1 = boundingPoly.vertices[1];
-					// 	var v2 = boundingPoly.vertices[2];
-					// 	var v3 = boundingPoly.vertices[3];
+						// var response = await googleVisionApi.analyse(imageBase64);
+						// console.log(response);
+						// response.data.responses[0].textAnnotations.forEach((item) => {
+						// 	console.log(item);
+						// 	// var v0 = boundingPoly.vertices[0];
+						// 	// var v1 = boundingPoly.vertices[1];
+						// 	// var v2 = boundingPoly.vertices[2];
+						// 	// var v3 = boundingPoly.vertices[3];
 
-					// 	create({
-					// 		left: v0.x,
-					// 		top: v0.y,
-					// 		width: v1.x - v0.x,
-					// 		height: v2.y - v0.y,
-					// 	});
-					// });
+						// 	// create({
+						// 	// 	left: v0.x,
+						// 	// 	top: v0.y,
+						// 	// 	width: v1.x - v0.x,
+						// 	// 	height: v2.y - v0.y,
+						// 	// });
+						// });
 
-					await chromeTabs.insertStyle(null, "cassiaOverlay.css");
-					await chromeTabs.executeScript(script);
-					console.log("script", script);
-				}
-				catch (error) {
-					console.error(error);
-				}
-			});
-		}
-	};
-}]);
+						// 					{ x: 933, y: 230 }
+						// 					1
+						// :
+						// 					{ x: 983, y: 229 }
+						// 					2
+						// :
+						// 					{ x: 983, y: 240 }
+						// 					3
+						// :
+						// 					{ x: 933, y: 241 }
+
+						await chromeTabs.insertStyle(null, "cassiaOverlay.css");
+						await chromeTabs.executeScript(script);
+						console.log("script", script);
+					}
+					catch (error) {
+						console.error(error);
+					}
+				});
+			}
+		};
+	}
+]);
 
 //https://developer.chrome.com/extensions/tabs#method-captureVisibleTab
 angular.module("cassia").service("chromeTabs", [function () {
@@ -149,6 +151,30 @@ angular.module("cassia").service("googleVisionApi", ["$http", function ($http) {
 				dataType: "json",
 				contentType: "application/json"
 			}).then(resolve).catch(reject);
+		});
+	};
+
+	return self;
+}]);
+
+angular.module("cassia").service("cassiaTools", [function () {
+	var self = this;
+
+	self.getImageData = (dataUrl) => {
+		return new Promise(function (resolve, reject) {
+			var canvas = document.createElement('canvas');
+			var context = canvas.getContext('2d');
+			var image = new Image();
+
+			image.addEventListener('load', function () {
+				console.log(image.width, image.height);
+				canvas.width = image.width;
+				canvas.height = image.height;
+				//context.drawImage(image, 0, 0, canvas.width, canvas.height);
+				//resolve(context.getImageData(0, 0, canvas.width, canvas.height));
+			}, false);
+
+			//image.src = dataUrl;
 		});
 	};
 
