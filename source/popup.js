@@ -18,25 +18,20 @@ angular.module("cassia").directive("cassiaTest", [
 						var prefix = "data:image/jpeg;base64,";
 						var imageBase64 = imageUrl.substring(prefix.length, imageUrl.length);
 
-						// var response = await googleVisionApi.analyse(imageBase64);
-						// console.log(response);
-						// response.data.responses[0].textAnnotations.forEach((item) => {
-						// 	console.log(item);
+						var response = await googleVisionApi.analyse(imageBase64);
+						console.log(response);
 
-						var data = {
-							polys: [
-								{
-									points: [
-										{ x: 933, y: 230 },
-										{ x: 983, y: 229 },
-										{ x: 983, y: 240 },
-										{ x: 933, y: 241 },
-									]
-								}
-							]
-						};
+						var data = {};
+						data.items = [];
+						response.data.responses[0].textAnnotations.forEach((item) => {
+							data.items.push({
+								points: item.boundingPoly.vertices
+							});
+						});
+
 						var jsonData = JSON.stringify(data);
-						var script = `cassiaLoad("${imageUrl}", \`${jsonData}\`)`;
+						var script = `cassiaLoad("${imageUrl}", \`${jsonData}\`);`;
+						//console.log(script);
 						await chromeTabs.insertStyle(null, "cassiaOverlay.css");
 						await chromeTabs.executeScript(null, "cassiaOverlay.js");
 						await chromeTabs.executeScript(script);

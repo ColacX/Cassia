@@ -12,7 +12,7 @@ function cassiaLoad(imageUrl, jsonData) {
 		polygons.forEach((item) => {
 			list.push(`
 <g>
-	<polygon points="${pointsToString(item.points)}" style="fill:lime;stroke:purple;stroke-width:1">
+	<polygon points="${pointsToString(item.points)}" style="fill-opacity: 0; stroke:purple; stroke-width:1;">
 		<title>hello world</title>
 	</polygon>
 </g>
@@ -21,7 +21,7 @@ function cassiaLoad(imageUrl, jsonData) {
 		return list.join();
 	};
 
-	//console.log(imageUrl, jsonData);
+	console.log(jsonData);
 	var data = JSON.parse(jsonData);
 
 	var list = document.getElementsByClassName("cassiaOverlay");
@@ -41,7 +41,7 @@ function cassiaLoad(imageUrl, jsonData) {
 
 		cassiaOverlay.innerHTML += `
 <svg viewBox="0 0 ${imageWidth} ${imageHeight}">
-	${polygonsToString(data.polys)}
+	${polygonsToString(data.items)}
 </svg>
 `;
 
