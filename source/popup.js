@@ -22,31 +22,17 @@ angular.module("cassia").directive("cassiaTest", [
 						// console.log(response);
 						// response.data.responses[0].textAnnotations.forEach((item) => {
 						// 	console.log(item);
-						// 	// var v0 = boundingPoly.vertices[0];
-						// 	// var v1 = boundingPoly.vertices[1];
-						// 	// var v2 = boundingPoly.vertices[2];
-						// 	// var v3 = boundingPoly.vertices[3];
 
-						// 	// create({
-						// 	// 	left: v0.x,
-						// 	// 	top: v0.y,
-						// 	// 	width: v1.x - v0.x,
-						// 	// 	height: v2.y - v0.y,
-						// 	// });
-						// });
-
-						// 					{ x: 933, y: 230 }
-						// 					1
-						// :
-						// 					{ x: 983, y: 229 }
-						// 					2
-						// :
-						// 					{ x: 983, y: 240 }
-						// 					3
-						// :
-						// 					{ x: 933, y: 241 }
-
-						var script = `cassiaLoad("${imageUrl}")`;
+						var data = {
+							poly: [
+								{ x: 933, y: 230 },
+								{ x: 983, y: 229 },
+								{ x: 983, y: 240 },
+								{ x: 933, y: 241 },
+							]
+						};
+						var jsonData = JSON.stringify(data);
+						var script = `cassiaLoad("${imageUrl}", \`${jsonData}\`)`;
 						await chromeTabs.insertStyle(null, "cassiaOverlay.css");
 						await chromeTabs.executeScript(null, "cassiaOverlay.js");
 						await chromeTabs.executeScript(script);
