@@ -24,11 +24,15 @@ angular.module("cassia").directive("cassiaTest", [
 						// 	console.log(item);
 
 						var data = {
-							poly: [
-								{ x: 933, y: 230 },
-								{ x: 983, y: 229 },
-								{ x: 983, y: 240 },
-								{ x: 933, y: 241 },
+							polys: [
+								{
+									points: [
+										{ x: 933, y: 230 },
+										{ x: 983, y: 229 },
+										{ x: 983, y: 240 },
+										{ x: 933, y: 241 },
+									]
+								}
 							]
 						};
 						var jsonData = JSON.stringify(data);
